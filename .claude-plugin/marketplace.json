@@ -1,0 +1,26 @@
+{
+  "name": "smtpfast",
+  "owner": {
+    "name": "SMTPfast",
+    "url": "https://smtpfa.st"
+  },
+  "metadata": {
+    "description": "Claude Code plugin for using the SMTPfast (smtpfa.st) email API."
+  },
+  "plugins": [
+    {
+      "name": "smtpfast",
+      "source": "./plugins/smtpfast",
+      "description": "Send transactional email and manage contacts, domains, broadcasts, and webhooks through the SMTPfast (smtpfa.st) API.",
+      "version": "0.1.0",
+      "author": {
+        "name": "SMTPfast",
+        "url": "https://smtpfa.st"
+      },
+      "homepage": "https://smtpfa.st",
+      "license": "MIT",
+      "category": "email",
+      "tags": ["email", "email-api", "transactional-email", "smtpfast"]
+    }
+  ]
+}
