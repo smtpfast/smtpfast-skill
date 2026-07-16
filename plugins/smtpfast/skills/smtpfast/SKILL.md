@@ -89,12 +89,12 @@ Returns the email's current `status` and its delivery events (queued, sent, deli
 
 Full endpoint list with methods and parameters is in `references/api-reference.md`. Load it when the task goes beyond sending. In brief:
 
-- **Contacts** (`/v1/contacts`) — create/list/update contacts, export, and organize them.
-- **Segments** (`/v1/segments`) — group contacts for targeting.
-- **Suppressions** (`/v1/suppressions`) — manage the do-not-send list (unsubscribes, bounces, complaints).
-- **Broadcasts** (`/v1/broadcasts`) — create a campaign, send a test, then send or cancel it.
-- **Domains** (`/v1/domains`) — add a sending domain and trigger DNS verification.
-- **Webhooks** (`/v1/webhooks`) — subscribe to delivery events; the preferred way to track status.
+- **Contacts** (`/v1/contacts`): create/list/update contacts, export, and organize them.
+- **Segments** (`/v1/segments`): group contacts for targeting.
+- **Suppressions** (`/v1/suppressions`): manage the do-not-send list (unsubscribes, bounces, complaints).
+- **Broadcasts** (`/v1/broadcasts`): create a campaign, send a test, then send or cancel it.
+- **Domains** (`/v1/domains`): add a sending domain and trigger DNS verification.
+- **Webhooks** (`/v1/webhooks`): subscribe to delivery events; the preferred way to track status.
 - **API keys** (`/v1/api-keys`) and **Analytics** (`/v1/analytics`).
 
 ## Handling responses and errors
