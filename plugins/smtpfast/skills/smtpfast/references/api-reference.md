@@ -71,9 +71,22 @@ Response: an `Email` object (`id`, `status`, timestamps, recipient info). Status
 | --- | --- | --- |
 | GET/POST | `/v1/domains` | List or add a sending domain. |
 | GET/DELETE | `/v1/domains/{id}` | Get or remove a domain. |
+| PATCH | `/v1/domains/{id}` | Turn inbound receiving on or off: `{"receiving_enabled": true}`. |
 | POST | `/v1/domains/{id}/verify` | Trigger DNS verification for a domain. |
 
-A domain must be verified before you can send `from` an address on it.
+A domain must be verified before you can send `from` an address on it. Enabling receiving needs a verified domain, a paid plan and a key created by a team owner or admin; the response carries the MX record to publish and a `receiving.status` of `disabled`, `pending`, `active` or `failed`.
+
+## Inbound (receiving)
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/v1/emails/receiving` | List received emails, newest first. `limit` 1 to 100 (default 20), `after` or `before` cursor (a received email id), never both. Metadata only. |
+| GET | `/v1/emails/receiving/{id}` | One received email with `html`, `text`, `headers`, attachment metadata and a 15-minute `raw.download_url` for the `.eml`. |
+| DELETE | `/v1/emails/receiving/{id}` | Delete your team's copy and its attachments. |
+| GET | `/v1/emails/receiving/{id}/attachments` | Attachments with fresh 15-minute `download_url`s. |
+| GET | `/v1/emails/receiving/{id}/attachments/{attachment_id}` | One attachment with a download link. |
+
+Scopes: `inbound:read` for the reads, `inbound:delete` for the delete. Paths, pagination and object shapes match Resend's receiving API; SMTPfast adds `status` (`delivered` or `quarantined`), `verdicts` (spf, dkim, dmarc, spam, virus), `envelope_from`, `envelope_to`, `domain_id` and `size`. A quarantined message (virus scan did not pass) returns metadata only: no bodies, headers, raw link or attachments. Messages are kept for 30 days. The `email.received` webhook fires once per received email with the list-item metadata; fetch the body by id.
 
 ## Webhooks
 
@@ -83,7 +96,7 @@ A domain must be verified before you can send `from` an address on it.
 | GET/PATCH/DELETE | `/v1/webhooks/{id}` | Manage a webhook. |
 | POST | `/v1/webhooks/{id}/test` | Send a test event to the webhook URL. |
 
-Webhooks deliver delivery-event notifications (sent, delivered, bounced, complained, opened, clicked) to your URL. Prefer them over polling.
+Webhooks deliver delivery-event notifications (sent, delivered, bounced, complained, opened, clicked, unsubscribed) and `email.received` for inbound mail to your URL. Prefer them over polling.
 
 ## Forms
 

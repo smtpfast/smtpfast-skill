@@ -1,0 +1,12 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/mcp.json",
+  "mcpServers": {
+    "smtpfast": {
+      "type": "http",
+      "url": "https://smtpfa.st/api/mcp",
+      "headers": {
+        "Authorization": "Bearer ${SMTPFAST_API_KEY}"
+      }
+    }
+  }
+}

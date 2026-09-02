@@ -1,6 +1,8 @@
 # SMTPfast Agent Skill
 
-An [Agent Skill](https://docs.claude.com/en/docs/agents-and-tools/agent-skills/overview) that teaches Claude (and other skill-aware agents) how to use the [SMTPfast](https://smtpfa.st) email API correctly: sending transactional email, managing contacts and sending domains, running broadcasts, and wiring up webhooks.
+An [Agent Skill](https://docs.claude.com/en/docs/agents-and-tools/agent-skills/overview) that teaches Claude (and other skill-aware agents) how to use the [SMTPfast](https://smtpfa.st) email API correctly: sending transactional email, receiving inbound email, managing contacts and sending domains, running broadcasts, and wiring up webhooks.
+
+The repo is also an [Agent Plugins Standard](https://agent-plugins.org/specification) plugin: `plugin.json` at the root, the skill under `skills/`, and `mcp.json` pointing at the hosted SMTPfast MCP server, so agents that read that layout can install it too.
 
 Drop it in and your agent knows the base URL, the auth model, the endpoints, and the right request shapes, so it integrates SMTPfast on the first try instead of guessing.
 
@@ -10,6 +12,7 @@ Drop it in and your agent knows the base URL, the auth model, the endpoints, and
 - **Auth** (Bearer API key) and the verified-domain requirement
 - **Unsubscribe** handling (`{{unsubscribe_url}}` + RFC 8058 `List-Unsubscribe`)
 - **Delivery status** via `GET /v1/emails/{id}` and webhooks
+- **Inbound email**: enable receiving on a domain, list and read received mail and attachments, the `email.received` webhook
 - **Contacts, segments, suppressions, broadcasts, domains, webhooks, API keys, analytics** (full endpoint map in the reference)
 - **Error handling** and retry guidance (400 vs 429 vs 5xx)
 

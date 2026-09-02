@@ -1,6 +1,6 @@
 ---
 name: smtpfast
-description: Send transactional emails and manage contacts, domains, broadcasts, suppressions, and webhooks through the SMTPfast (smtpfa.st) email API. Use when the user wants to send email via SMTPfast, integrate the smtpfa.st API, wire up transactional email, add SMTPfast to an app or agent, check an email's delivery status, or manage sending domains, contacts, or broadcasts on SMTPfast.
+description: Send transactional emails, receive inbound email, and manage contacts, domains, broadcasts, suppressions, and webhooks through the SMTPfast (smtpfa.st) email API. Use when the user wants to send or receive email via SMTPfast, integrate the smtpfa.st API, wire up transactional email, add SMTPfast to an app or agent, check an email's delivery status, read mail received on a domain, or manage sending domains, contacts, or broadcasts on SMTPfast.
 ---
 
 # SMTPfast API
@@ -16,6 +16,7 @@ Trigger on requests like:
 - "Check whether that email was delivered"
 - "Create a sending domain / contact / broadcast on SMTPfast"
 - "Wire up an SMTPfast webhook"
+- "Receive email on my domain with SMTPfast" / "read the mail sent to support@"
 
 ## The essentials
 
@@ -84,6 +85,24 @@ curl https://smtpfa.st/api/v1/emails/email_abc123 \
 ```
 
 Returns the email's current `status` and its delivery events (queued, sent, delivered, bounced, complained, opened, clicked). Prefer webhooks over polling for anything real-time (see below).
+
+## Receive email
+
+Inbound is per domain (paid plans). Enable it, publish the MX record the response returns, then read messages through the API or react to the `email.received` webhook.
+
+```bash
+# turn receiving on for a verified domain
+curl -X PATCH https://smtpfa.st/api/v1/domains/DOMAIN_ID \
+  -H "Authorization: Bearer $SMTPFAST_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"receiving_enabled": true}'
+
+# list received mail, then fetch one with its body and attachments
+curl https://smtpfa.st/api/v1/emails/receiving -H "Authorization: Bearer $SMTPFAST_API_KEY"
+curl https://smtpfa.st/api/v1/emails/receiving/RECEIVED_ID -H "Authorization: Bearer $SMTPFAST_API_KEY"
+```
+
+Use a dedicated subdomain (for example `inbound.yourapp.com`) when the root domain already has a mailbox provider: the MX record decides where all mail for that name goes. Keys need the `inbound:read` scope; download links last 15 minutes; messages are kept for 30 days. Endpoint details are in `references/api-reference.md`.
 
 ## The rest of the API
 

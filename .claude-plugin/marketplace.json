@@ -11,8 +11,8 @@
     {
       "name": "smtpfast",
       "source": "./plugins/smtpfast",
-      "description": "Send transactional email and manage contacts, domains, broadcasts, and webhooks through the SMTPfast (smtpfa.st) API.",
-      "version": "0.1.0",
+      "description": "Send transactional email, receive inbound email, and manage contacts, domains, broadcasts, and webhooks through the SMTPfast (smtpfa.st) API.",
+      "version": "0.2.0",
       "author": {
         "name": "SMTPfast",
         "url": "https://smtpfa.st"
@@ -20,7 +20,12 @@
       "homepage": "https://smtpfa.st",
       "license": "MIT",
       "category": "email",
-      "tags": ["email", "email-api", "transactional-email", "smtpfast"]
+      "tags": [
+        "email",
+        "email-api",
+        "transactional-email",
+        "smtpfast"
+      ]
     }
   ]
 }
