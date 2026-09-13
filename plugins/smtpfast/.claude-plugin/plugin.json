@@ -1,7 +1,7 @@
 {
   "name": "smtpfast",
   "description": "Use the SMTPfast (smtpfa.st) email API from an agent: send transactional email, receive inbound email, manage contacts, sending domains, broadcasts, suppressions, and webhooks, with copy-ready request examples.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": {
     "name": "SMTPfast",
     "url": "https://smtpfa.st"

@@ -12,7 +12,7 @@ Drop it in and your agent knows the base URL, the auth model, the endpoints, and
 - **Auth** (Bearer API key) and the verified-domain requirement
 - **Unsubscribe** handling (`{{unsubscribe_url}}` + RFC 8058 `List-Unsubscribe`)
 - **Delivery status** via `GET /v1/emails/{id}` and webhooks
-- **Inbound email**: enable receiving on a domain, list and read received mail and attachments, the `email.received` webhook
+- **Inbound email**: enable receiving on a domain, list and read received mail and attachments, reply in-thread, the `email.received` webhook
 - **Contacts, segments, suppressions, broadcasts, domains, webhooks, API keys, analytics** (full endpoint map in the reference)
 - **Error handling** and retry guidance (400 vs 429 vs 5xx)
 

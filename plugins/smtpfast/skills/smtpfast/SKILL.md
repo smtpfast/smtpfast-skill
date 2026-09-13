@@ -28,7 +28,9 @@ Trigger on requests like:
 
 ## Send an email
 
-The one call you need most. Required fields: `from`, `to` (an array), `subject`. Common optional fields: `html`, `text`, `cc`, `bcc`, `reply_to`, `headers`, `tags`.
+The one call you need most. Required fields: `from`, `to` (an array), `subject`. Common optional fields: `html`, `text`, `cc`, `bcc`, `reply_to`, `headers`, `tags`, and `scheduled_at` (ISO 8601) to hold it until a time up to 30 days ahead.
+
+Pass an `Idempotency-Key` header on anything a user could trigger twice. A repeat of the same key returns the first email's id rather than sending again.
 
 ```bash
 curl -X POST https://smtpfa.st/api/v1/emails \
@@ -102,6 +104,18 @@ curl https://smtpfa.st/api/v1/emails/receiving -H "Authorization: Bearer $SMTPFA
 curl https://smtpfa.st/api/v1/emails/receiving/RECEIVED_ID -H "Authorization: Bearer $SMTPFAST_API_KEY"
 ```
 
+Reply in the same thread with `POST /v1/emails/receiving/{id}/reply`. Every field is optional: with an empty body it replies to the sender, from the address the mail arrived at, with `Re:` and the original quoted underneath. It sets `In-Reply-To` and `References`, so the answer lands in the existing conversation instead of starting a new one.
+
+```bash
+curl -X POST https://smtpfa.st/api/v1/emails/receiving/RECEIVED_ID/reply \
+  -H "Authorization: Bearer $SMTPFAST_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: reply-RECEIVED_ID" \
+  -d '{"text": "Thanks, we are on it."}'
+```
+
+Replying needs `email:send` as well as `inbound:read`.
+
 Use a dedicated subdomain (for example `inbound.yourapp.com`) when the root domain already has a mailbox provider: the MX record decides where all mail for that name goes. Keys need the `inbound:read` scope; download links last 15 minutes; messages are kept for 30 days. Endpoint details are in `references/api-reference.md`.
 
 ## The rest of the API
@@ -113,14 +127,16 @@ Full endpoint list with methods and parameters is in `references/api-reference.m
 - **Suppressions** (`/v1/suppressions`): manage the do-not-send list (unsubscribes, bounces, complaints).
 - **Broadcasts** (`/v1/broadcasts`): create a campaign, send a test, then send or cancel it.
 - **Domains** (`/v1/domains`): add a sending domain and trigger DNS verification.
-- **Webhooks** (`/v1/webhooks`): subscribe to delivery events; the preferred way to track status.
+- **Webhooks** (`/v1/webhooks`): subscribe to delivery events; the preferred way to track status. `/deliveries` shows every attempt with the response we got back, and one can be retried.
+- **Logs** (`/v1/logs`): every email event for the team, filterable by type, time, recipient, domain and tag. Needs the `logs:read` scope.
+- **Share links** (`/v1/emails/{id}/share`): show a rendered sent email to someone without an account.
 - **API keys** (`/v1/api-keys`) and **Analytics** (`/v1/analytics`).
 
 ## Handling responses and errors
 
 - **2xx:** success. Sends return `200` with the queued `Email` (or batch result).
 - **400:** bad request (missing `from`/`to`/`subject`, malformed body, unverified domain). Read the error message; do not retry blindly.
-- **401 / 403:** bad or missing API key, or the key lacks permission. Fix the credential.
+- **401 / 403:** bad or missing API key, or the key lacks a scope. A 403 names the scope it wanted. `logs:read`, `inbound:read` and `inbound:delete` are never granted by default, so a key made before you needed them will not have them: mint a new key rather than retrying.
 - **429:** rate limited. Back off and retry with exponential delay.
 - **5xx:** transient server error. Retry a few times with backoff.
 

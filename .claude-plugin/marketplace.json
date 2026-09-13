@@ -12,7 +12,7 @@
       "name": "smtpfast",
       "source": "./plugins/smtpfast",
       "description": "Send transactional email, receive inbound email, and manage contacts, domains, broadcasts, and webhooks through the SMTPfast (smtpfa.st) API.",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "author": {
         "name": "SMTPfast",
         "url": "https://smtpfa.st"
