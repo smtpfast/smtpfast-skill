@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "smtpfast": {
+      "type": "http",
+      "url": "https://smtpfa.st/api/mcp"
+    }
+  }
+}
