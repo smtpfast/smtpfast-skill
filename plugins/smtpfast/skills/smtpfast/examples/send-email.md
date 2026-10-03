@@ -39,7 +39,7 @@ async function sendEmail() {
   if (!res.ok) {
     throw new Error(`SMTPfast ${res.status}: ${await res.text()}`);
   }
-  return res.json(); // { id: "email_...", status: "queued", ... }
+  return res.json(); // { id: "..." }
 }
 ```
 
@@ -65,7 +65,7 @@ resp = requests.post(
     timeout=15,
 )
 resp.raise_for_status()
-email = resp.json()  # {"id": "email_...", "status": "queued", ...}
+email = resp.json()  # {"id": "..."}
 ```
 
 ## PHP (curl)
