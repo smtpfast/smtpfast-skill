@@ -67,14 +67,27 @@ export function renderEndpoints(spec) {
  * The method and path pairs the hand-written reference documents in its
  * tables. A row may list several methods (`GET/PATCH/DELETE`), several paths
  * with their own methods (`.../labels`, PATCH/DELETE `.../labels/{label_id}`),
- * and paths shortened with `...` to their tail.
+ * and paths shortened with `...`, which stand for the base named in the
+ * section's "All paths are under `<base>`" line. A shortened path with no
+ * base in its section documents nothing.
  */
 export function documented(reference) {
   const pairs = [];
-  for (const row of reference.matchAll(/^\|\s*([A-Z]+(?:\/[A-Z]+)*)\s*\|([^|\n]*)\|/gm)) {
+  let base = null;
+  for (const line of reference.split("\n")) {
+    if (line.startsWith("## ")) base = null;
+    const under = /All paths are under `([^`]+)`/.exec(line);
+    if (under) base = under[1];
+    const row = /^\|\s*([A-Z]+(?:\/[A-Z]+)*)\s*\|([^|]*)\|/.exec(line);
+    if (!row) continue;
     const rowMethods = row[1].split("/");
     for (const m of row[2].matchAll(/(?:\b([A-Z]+(?:\/[A-Z]+)*)\s+)?`([^`]+)`/g)) {
-      for (const method of m[1] ? m[1].split("/") : rowMethods) pairs.push({ method, path: m[2] });
+      let path = m[2];
+      if (path.startsWith("...")) {
+        if (!base) continue;
+        path = base + path.slice(3);
+      }
+      for (const method of m[1] ? m[1].split("/") : rowMethods) pairs.push({ method, path });
     }
   }
   return pairs;
@@ -84,8 +97,7 @@ export function documented(reference) {
 const shape = (path) => path.replace(/\{[^}]+\}/g, "{}");
 
 function covers(o, p) {
-  if (p.method !== o.method) return false;
-  return p.path.startsWith("...") ? shape(o.path).endsWith(shape(p.path.slice(3))) : shape(p.path) === shape(o.path);
+  return p.method === o.method && shape(p.path) === shape(o.path);
 }
 
 /** Operations the hand-written reference does not document in any table row. */
@@ -97,7 +109,7 @@ export function uncovered(spec, reference) {
 /** Rows in the hand-written reference that match no operation in the spec: removed or mistyped endpoints. */
 export function stale(spec, reference) {
   const ops = operations(spec);
-  return documented(reference).filter((p) => p.path.includes("/v1/") || p.path.startsWith("...")).filter((p) => !ops.some((o) => covers(o, p)));
+  return documented(reference).filter((p) => p.path.includes("/v1/")).filter((p) => !ops.some((o) => covers(o, p)));
 }
 
 export function renderReport(missing, extra = []) {

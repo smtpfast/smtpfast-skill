@@ -25,7 +25,11 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
+      # Always main: the job pushes to main, so a run started from another
+      # branch must not carry that branch's commits along.
       - uses: actions/checkout@v5
+        with:
+          ref: main
 
       - uses: actions/setup-node@v5
         with:

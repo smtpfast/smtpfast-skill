@@ -176,7 +176,8 @@ Scopes: `inbound:read` for the reads, `inbound:delete` for the delete. Paths, pa
 | GET | `/v1/webhooks/{id}/deliveries/{delivery_id}` | One attempt, with the request and the response we got back. |
 | POST | `/v1/webhooks/{id}/deliveries/{delivery_id}/retry` | Send that delivery again. |
 | GET | `/v1/webhooks/{id}/events` | Events sent to the webhook (Resend-compatible), with `status` filter. |
-| GET | `/v1/webhooks/{id}/events/{event_id}` and `.../attempts` | One event with its payload, and every attempt. |
+| GET | `/v1/webhooks/{id}/events/{event_id}` | One event with its payload. |
+| GET | `/v1/webhooks/{id}/events/{event_id}/attempts` | Every delivery attempt for that event. |
 | POST | `/v1/webhooks/{id}/events/{event_id}/replay` | Deliver an event again. |
 | POST | `/v1/webhooks/{id}/signing-secret/rotate` | New signing secret, returned once. Owner or admin. |
 

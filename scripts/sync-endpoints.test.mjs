@@ -47,10 +47,18 @@ test("reads rows with several methods, inline methods and shortened paths", () =
     },
   };
   const reference = [
+    "## Inboxes",
+    "All paths are under `/v1/inboxes/{inbox_id}`.",
     "| GET/PATCH/DELETE | `/v1/inboxes/{inbox_id}` | Manage an inbox. |",
     "| GET/POST | `.../labels`, PATCH/DELETE `.../labels/{label_id}` | Manage labels. |",
   ].join("\n");
   assert.deepEqual(uncovered(big, reference).map((o) => `${o.method} ${o.path}`), ["GET /v1/inboxes/{inbox_id}/drafts"]);
+});
+
+test("a shortened path covers only its own base, never a same-named path elsewhere", () => {
+  const s3 = { paths: { "/v1/inboxes/{inbox_id}/drafts": { get: {} }, "/v1/drafts": { get: {} } } };
+  const reference = "## Inboxes\nAll paths are under `/v1/inboxes/{inbox_id}`.\n| GET | `.../drafts` | Drafts. |\n## Other\n| GET | `.../drafts` | No base here. |\n";
+  assert.deepEqual(uncovered(s3, reference).map((o) => o.path), ["/v1/drafts"]);
 });
 
 test("path parameter names do not matter, and rows that match nothing are reported", () => {
