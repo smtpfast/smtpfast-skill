@@ -31,7 +31,45 @@ All request/response bodies are JSON. IDs are prefixed strings (e.g. `email_abc1
 
 Send an `Idempotency-Key` header to make a retry safe: the same key returns the first email's id instead of sending twice.
 
-Response: an `Email` object (`id`, `status`, timestamps, recipient info). Status flows through `queued → sent → delivered`, with `bounced`, `complained`, `opened`, `clicked` events as applicable.
+Instead of `html`/`text`, pass `template: { "id": "<id or alias>", "variables": { ... } }` to send a published hosted template (see Templates).
+
+Response: `200` with `{ "id": "..." }`, as Resend returns. `GET /v1/emails/{id}` gives the full email with `last_event` and its events; status flows through `queued → sent → delivered`, with `bounced`, `complained`, `opened`, `clicked` events as applicable.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/v1/emails/metrics` | Aggregate metrics (sent, delivered, opens, clicks, bounces, rates) for a time range. `start_date`, `end_date`, `timezone`, `granularity`, `metrics`, `dimensions` (period, domain, email, broadcast). |
+| GET | `/v1/emails/clicked-links` | Which links were clicked, across the account. |
+
+## Templates
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET/POST | `/v1/templates` | List or create templates (`name`, `alias`, `subject`, `from`, `html` or `markdown`, `text`, `variables`). |
+| GET/PATCH/DELETE | `/v1/templates/{id}` | Read, edit (the draft) or delete a template. Pass `expected_updated_at` on PATCH to refuse overwriting a newer edit. |
+| POST | `/v1/templates/{id}/publish` | Make the draft the version sends use. |
+| POST | `/v1/templates/{id}/duplicate` | Copy a template. |
+
+Variables: `{{{KEY}}}`, with a type (`string`, `number`) and optional `fallback_value`, or an inline fallback `{{{KEY|default}}}`. Reading needs `email:read`; writing needs `email:send`.
+
+## Inboxes
+
+Resend-compatible Inboxes API. All paths are under `/v1/inboxes/{inbox_id}`.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET/POST | `/v1/inboxes` | List inboxes, or turn an address on a receiving domain into one. |
+| GET/PATCH/DELETE | `/v1/inboxes/{inbox_id}` | Manage an inbox. |
+| GET | `.../threads` | List threads: `folder`, `label`, `query`, paging. |
+| GET/PATCH/DELETE | `.../threads/{thread_id}` | Read, mark read/unread, move folder, label, or delete a thread. |
+| GET | `.../threads/{thread_id}/emails` | The messages in a thread (`latest=true` for the newest page first). |
+| GET | `.../threads/{thread_id}/emails/{email_id}` | One message with body and `verdicts`. |
+| POST | `.../threads/{thread_id}/emails/{email_id}/reply` | Reply in the thread. Needs `email:send`. |
+| POST | `.../threads/{thread_id}/emails/{email_id}/forward` | Forward a message. Needs `email:send`. |
+| GET/POST | `.../labels`, PATCH/DELETE `.../labels/{label_id}` | Manage labels. |
+| GET/POST | `.../drafts`, GET/PATCH/DELETE `.../drafts/{draft_id}` | Drafts for a person to review. |
+| POST | `.../drafts/{draft_id}/send` | Send a draft. Pass the reviewed `revision`; a changed draft answers `409`. |
+
+Reading, labelling and drafts need `inbound:read`; deleting needs `inbound:delete`; replying, forwarding and sending drafts also need `email:send`.
 
 ## Contacts
 
@@ -122,6 +160,10 @@ Scopes: `inbound:read` for the reads, `inbound:delete` for the delete. Paths, pa
 | GET | `/v1/webhooks/{id}/deliveries` | Delivery attempts for a webhook. Filter with `status`, page with `limit` and `after`. |
 | GET | `/v1/webhooks/{id}/deliveries/{delivery_id}` | One attempt, with the request and the response we got back. |
 | POST | `/v1/webhooks/{id}/deliveries/{delivery_id}/retry` | Send that delivery again. |
+| GET | `/v1/webhooks/{id}/events` | Events sent to the webhook (Resend-compatible), with `status` filter. |
+| GET | `/v1/webhooks/{id}/events/{event_id}` and `.../attempts` | One event with its payload, and every attempt. |
+| POST | `/v1/webhooks/{id}/events/{event_id}/replay` | Deliver an event again. |
+| POST | `/v1/webhooks/{id}/signing-secret/rotate` | New signing secret, returned once. Owner or admin. |
 
 Webhooks deliver delivery-event notifications (sent, delivered, bounced, complained, opened, clicked, unsubscribed) and `email.received` for inbound mail to your URL. Prefer them over polling.
 
@@ -146,7 +188,15 @@ Filters: `type`, `since`, `until`, `recipient`, `domain`, `domain_id`, `tag`, `e
 
 ## Scopes
 
-A key is created with `email:send`, `email:read`, `domain:read`, `domain:write`, `contact:read`, `contact:write`, `form:read`, `form:write`, `webhook:read` and `webhook:write`. Three more exist and are never granted unless asked for: `logs:read`, `inbound:read`, `inbound:delete`, plus `apikey:manage` for minting further keys. A call that needs a scope the key lacks returns 403 naming the scope.
+A key created without a `scopes` field gets `email:send`, `email:read`, `domain:read`, `domain:write`, `contact:read`, `contact:write`, `form:read`, `form:write`, `webhook:read` and `webhook:write`. These are never granted unless asked for: `logs:read`, `inbound:read`, `inbound:delete`, `team:read`, `team:manage`, and `apikey:manage` for minting further keys. A call that needs a scope the key lacks returns 403 naming the scope.
+
+## Team
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/v1/team/members` | Members with their roles (`team:read`). |
+| PATCH/DELETE | `/v1/team/members/{id}` | Change a role or billing access, or remove a member (`team:manage`, owner or admin). |
+| GET/POST | `/v1/team/invites`, DELETE `/v1/team/invites/{id}` | Pending invitations: list, invite, revoke. |
 
 ## API keys and analytics
 
@@ -163,6 +213,8 @@ A key is created with `email:send`, `email:read`, `domain:read`, `domain:write`,
 | 400 | Bad request (missing/invalid fields, unverified domain). Fix the request. |
 | 401 | Missing or invalid API key. |
 | 403 | Key lacks permission for the action. |
+| 409 | Conflict: an idempotency key reused with other content, or a resource that changed since you read it. |
+| 422 | Valid request that cannot be carried out, such as an unpublished template or missing template variables. |
 | 429 | Rate limited. Back off and retry with exponential delay. |
 | 5xx | Transient server error. Retry with backoff. |
 

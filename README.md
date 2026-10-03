@@ -1,6 +1,6 @@
 # SMTPfast Agent Skill
 
-An [Agent Skill](https://docs.claude.com/en/docs/agents-and-tools/agent-skills/overview) that teaches Claude (and other skill-aware agents) how to use the [SMTPfast](https://smtpfa.st) email API correctly: sending transactional email, receiving inbound email, managing contacts and sending domains, running broadcasts, and wiring up webhooks.
+An [Agent Skill](https://docs.claude.com/en/docs/agents-and-tools/agent-skills/overview) that teaches Claude (and other skill-aware agents) how to use the [SMTPfast](https://smtpfa.st) email API correctly: sending transactional email (raw or from hosted templates), receiving inbound email, working an inbox with drafts for a person to approve, managing contacts and sending domains, running broadcasts, and wiring up webhooks.
 
 The repo is also an [Agent Plugins Standard](https://agent-plugins.org/specification) plugin: `plugin.json` at the root, the skill under `skills/`, and `mcp.json` pointing at the hosted SMTPfast MCP server, so agents that read that layout can install it too.
 
@@ -13,6 +13,8 @@ Drop it in and your agent knows the base URL, the auth model, the endpoints, and
 - **Unsubscribe** handling (`{{unsubscribe_url}}` + RFC 8058 `List-Unsubscribe`)
 - **Delivery status** via `GET /v1/emails/{id}` and webhooks
 - **Inbound email**: enable receiving on a domain, list and read received mail and attachments, reply in-thread, the `email.received` webhook
+- **Hosted templates**: send a published template by id or alias with variables, and manage templates
+- **Inboxes**: threads, labels and drafts on your own domain, and the safe pattern for agents: write drafts with a key that cannot send, and let a person approve them
 - **Contacts, segments, suppressions, broadcasts, domains, webhooks, API keys, analytics** (full endpoint map in the reference)
 - **Error handling** and retry guidance (400 vs 429 vs 5xx)
 
