@@ -149,7 +149,7 @@ Use a dedicated subdomain (for example `inbound.yourapp.com`) when the root doma
 
 ## The rest of the API
 
-Full endpoint list with methods and parameters is in `references/api-reference.md`. Load it when the task goes beyond sending. In brief:
+How to use each endpoint, with fields and gotchas, is in `references/api-reference.md`. Load it when the task goes beyond sending. `references/endpoints.md` lists every operation in the API, generated from the live spec, so check it when you need an endpoint the reference does not mention. In brief:
 
 - **Contacts** (`/v1/contacts`): create/list/update contacts, export, and organize them.
 - **Segments** (`/v1/segments`): group contacts for targeting.
