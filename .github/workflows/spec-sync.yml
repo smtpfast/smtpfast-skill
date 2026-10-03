@@ -1,0 +1,88 @@
+name: Spec sync
+
+# Keeps the skill in step with the SMTPfast API. Regenerates
+# references/endpoints.md from the live spec and commits it with a patch
+# version bump when it changed, and keeps one issue (label: spec-sync) listing
+# operations the hand-written api-reference.md does not cover yet, or rows in
+# it that no longer match the API.
+
+on:
+  schedule:
+    - cron: "41 6 * * *"
+  repository_dispatch:
+    types: [spec-changed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: spec-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Test the sync script
+        run: node --test scripts/*.test.mjs
+
+      # A failed download stops the job here, so a broken run never edits the
+      # index or closes the issue.
+      - name: Fetch the spec
+        run: >-
+          curl --fail --silent --show-error --retry 3 --retry-all-errors --max-time 60
+          -o "$RUNNER_TEMP/openapi.json" https://smtpfa.st/api/v1/openapi.json
+
+      - name: Regenerate the endpoint index
+        run: node scripts/sync-endpoints.mjs --spec "$RUNNER_TEMP/openapi.json" --write --bump --report "$RUNNER_TEMP/report.md"
+
+      - name: Commit when it changed
+        run: |
+          if git diff --quiet; then
+            echo "endpoints.md is up to date."
+            exit 0
+          fi
+          version=$(node -p "require('./plugin.json').version")
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add plugins/smtpfast/skills/smtpfast/references/endpoints.md plugin.json plugins/smtpfast/.claude-plugin/plugin.json .claude-plugin/marketplace.json
+          git commit -m "Sync the endpoint index with the API spec (v$version)"
+          git push origin HEAD:main
+
+      - name: Update the tracking issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          REPORT: ${{ runner.temp }}/report.md
+        run: |
+          set -euo pipefail
+          label=spec-sync
+          gh label create "$label" --color 1d76db --description "API changes the skill reference does not cover yet" --force > /dev/null
+          open=$(gh issue list --label "$label" --state open --limit 1 --json number --jq '.[0].number // empty')
+          if [ ! -s "$REPORT" ]; then
+            if [ -n "$open" ]; then
+              gh issue close "$open" --comment "api-reference.md covers every operation in the API spec again."
+            fi
+            exit 0
+          fi
+          if [ -n "$open" ]; then
+            if [ "$(gh issue view "$open" --json body --jq .body)" != "$(cat "$REPORT")" ]; then
+              gh issue edit "$open" --body-file "$REPORT"
+            fi
+            exit 0
+          fi
+          closed=$(gh issue list --label "$label" --state closed --limit 1 --json number --jq '.[0].number // empty')
+          if [ -n "$closed" ]; then
+            gh issue edit "$closed" --body-file "$REPORT"
+            gh issue reopen "$closed" --comment "The API changed and the reference needs an update again."
+          else
+            gh issue create --title "API changes the skill reference does not cover" --label "$label" --body-file "$REPORT"
+          fi

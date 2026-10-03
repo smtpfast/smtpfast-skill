@@ -11,6 +11,9 @@ All request/response bodies are JSON. IDs are prefixed strings (e.g. `email_abc1
 | POST | `/v1/emails` | Send a single email. |
 | POST | `/v1/emails/batch` | Send up to 100 emails (JSON array of email objects). |
 | GET | `/v1/emails/{id}` | Get an email's status and delivery events. |
+| GET | `/v1/emails` | List sent emails, newest first, without bodies. `limit`, `page`, `status`, `to`, `after`/`before` cursors. |
+| PATCH | `/v1/emails/{id}` | Change a scheduled email's `scheduled_at`. To change content, cancel and send again. |
+| POST | `/v1/emails/{id}/cancel` | Cancel an email that is still scheduled or queued; `409` once it has left for the provider. |
 | POST | `/v1/emails/{id}/share` | Create a link that shows the rendered email to someone without an account. Body `{"expires_in": <seconds>}`, 60 to 2592000. |
 
 **Send email body** (`POST /v1/emails`):
@@ -81,6 +84,9 @@ Reading, labelling and drafts need `inbound:read`; deleting needs `inbound:delet
 | PATCH | `/v1/contacts/{id}` | Update a contact. |
 | DELETE | `/v1/contacts/{id}` | Delete a contact. |
 | GET | `/v1/contacts/export` | Export contacts. |
+| DELETE | `/v1/contacts` | Bulk delete: `{"ids": [...]}` (up to 500), or the whole audience with `{"confirm": "all"}` (owner or admin). |
+| GET/POST | `/v1/contact-properties` | List or declare custom fields: `key`, `type` (`string` or `number`), optional `fallback_value`. Undeclared properties still work. |
+| GET/PATCH/DELETE | `/v1/contact-properties/{id}` | Read one, change its `fallback_value` (key and type are fixed), or remove the declaration (contact values stay). |
 
 ## Segments
 
@@ -90,6 +96,7 @@ Reading, labelling and drafts need `inbound:read`; deleting needs `inbound:delet
 | GET/PATCH/DELETE | `/v1/segments/{id}` | Manage a segment. |
 | GET | `/v1/segments/{id}/contacts` | List a segment's contacts. |
 | GET | `/v1/contacts/{id}/segments` | The segments one contact belongs to. |
+| POST/DELETE | `/v1/contacts/{id}/segments/{segment_id}` | Add a contact to a segment (already a member is fine) or take it out; the contact stays in the audience. |
 
 ## Suppressions
 
@@ -97,6 +104,8 @@ Reading, labelling and drafts need `inbound:read`; deleting needs `inbound:delet
 | --- | --- | --- |
 | GET/POST | `/v1/suppressions` | List or add suppressed addresses (do-not-send). |
 | GET/DELETE | `/v1/suppressions/{id}` | Get or remove a suppression. |
+| POST | `/v1/suppressions/batch/add` | Suppress 1 to 100 addresses: `{"emails": [...]}`. |
+| POST | `/v1/suppressions/batch/remove` | Remove 1 to 100 suppressions by `emails` or by `ids`, not both. Owner or admin. |
 
 ## Broadcasts
 
@@ -108,6 +117,9 @@ Reading, labelling and drafts need `inbound:read`; deleting needs `inbound:delet
 | POST | `/v1/broadcasts/{id}/send` | Send the broadcast. |
 | POST | `/v1/broadcasts/{id}/cancel` | Cancel a scheduled/sending broadcast. |
 | GET | `/v1/broadcasts/audience` | How many contacts a broadcast would reach, before you send it. |
+| GET | `/v1/broadcasts/{id}/recipients` | Recipients for one event `type` (sent, delivered, opened, clicked, bounced, ...), newest first, with cursors. |
+| GET | `/v1/broadcasts/{id}/clicked-links` | Every link clicked in the broadcast, with total and unique clicks. |
+| POST | `/v1/broadcasts/{id}/duplicate` | Copy into a new draft (content and targeting, not the schedule or history). Optional `name`. |
 
 ## Domains
 
@@ -134,6 +146,8 @@ A domain must be verified before you can send `from` an address on it. Enabling 
 | GET | `/v1/emails/receiving/{id}/attachments` | Attachments with fresh 15-minute `download_url`s. |
 | GET | `/v1/emails/receiving/{id}/attachments/{attachment_id}` | One attachment with a download link. |
 | POST | `/v1/emails/receiving/{id}/reply` | Reply to a received email, threaded. |
+| PATCH | `/v1/emails/receiving/{id}` | Mark one received email read or unread: `{"read": true}`. |
+| PATCH | `/v1/emails/receiving` | Mark up to 100 at once: `{"ids": [...], "read": true}`. |
 
 **Reply body**, every field optional:
 
@@ -156,6 +170,7 @@ Scopes: `inbound:read` for the reads, `inbound:delete` for the delete. Paths, pa
 | --- | --- | --- |
 | GET/POST | `/v1/webhooks` | List or create webhook subscriptions. |
 | GET/PATCH/DELETE | `/v1/webhooks/{id}` | Manage a webhook. |
+| PUT | `/v1/webhooks/{id}` | Same update as PATCH (url, events, active), for clients that use PUT. |
 | POST | `/v1/webhooks/{id}/test` | Send a test event to the webhook URL. |
 | GET | `/v1/webhooks/{id}/deliveries` | Delivery attempts for a webhook. Filter with `status`, page with `limit` and `after`. |
 | GET | `/v1/webhooks/{id}/deliveries/{delivery_id}` | One attempt, with the request and the response we got back. |
@@ -184,6 +199,7 @@ Filters: `type`, `since`, `until`, `recipient`, `domain`, `domain_id`, `tag`, `e
 | GET | `/v1/forms/{id}/pending` | Signups waiting on double opt-in. The form itself only embeds the 5 most recent. |
 | POST | `/v1/forms/{id}/pending/{pending_id}/approve` | Confirm one signup without the email round trip. |
 | POST | `/v1/forms/{id}/pending/approve-all` | Confirm all of them. |
+| DELETE | `/v1/forms/{id}/pending/{pending_id}` | Drop a pending signup without confirming it. |
 | POST | `/v1/forms/{id}/welcome-preview` | Render the welcome email as the worker would, without sending. Optional `subject` and `markdown` override unsaved edits. |
 
 ## Scopes
@@ -203,7 +219,9 @@ A key created without a `scopes` field gets `email:send`, `email:read`, `domain:
 | Method | Path | Purpose |
 | --- | --- | --- |
 | GET/POST | `/v1/api-keys` | List or create API keys. |
-| GET/DELETE | `/v1/api-keys/{id}` | Get or revoke a key. |
+| PATCH/DELETE | `/v1/api-keys/{id}` | Rename a key or change its `scopes` (the secret stays the same), or revoke it. There is no GET for one key; list them instead. |
+| GET | `/v1/me` | This key's scopes, plan, rate limit and safety checks. Needs no scope: call it first instead of finding scopes through 403s. |
+| GET | `/v1/usage` | Usage against the plan limits, in Resend's shape: emails in the last 24 hours and this month, contacts, segments, domains. |
 | GET | `/v1/analytics` | Sending and engagement metrics. |
 
 ## Errors

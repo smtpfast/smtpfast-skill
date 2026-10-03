@@ -54,9 +54,15 @@ plugins/smtpfast/
   .claude-plugin/plugin.json        # plugin manifest
   skills/smtpfast/
     SKILL.md                        # the skill: essentials + send-email quickstart
-    references/api-reference.md     # full endpoint map, fields, error codes
+    references/api-reference.md     # how to use each endpoint: fields, gotchas, error codes
+    references/endpoints.md         # every operation, generated from the live spec
     examples/send-email.md          # curl / Node / Python / PHP
+scripts/sync-endpoints.mjs          # regenerates endpoints.md, checks api-reference.md
 ```
+
+## Staying in sync with the API
+
+A daily workflow (`.github/workflows/spec-sync.yml`) downloads the live OpenAPI spec, regenerates `references/endpoints.md` and commits it with a patch version bump when the API changed, so a plugin update picks it up. It also keeps one issue (label `spec-sync`) open while `api-reference.md` misses an operation or documents one that no longer exists. Run it by hand with `node scripts/sync-endpoints.mjs --report report.md`.
 
 ## Links
 
