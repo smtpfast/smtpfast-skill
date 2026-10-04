@@ -1,12 +1,17 @@
 {
   "name": "smtpfast",
   "description": "Use the SMTPfast (smtpfa.st) email API from an agent: send transactional email, receive inbound email, manage contacts, sending domains, broadcasts, suppressions, and webhooks, with copy-ready request examples.",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "author": {
     "name": "SMTPfast",
     "url": "https://smtpfa.st"
   },
   "homepage": "https://smtpfa.st",
   "repository": "https://github.com/smtpfast/smtpfast-skill",
-  "license": "MIT"
+  "license": "MIT",
+  "icon": "./.claude-plugin/icon.png",
+  "documentationUrl": "https://smtpfa.st/docs/mcp",
+  "supportUrl": "https://github.com/smtpfast/smtpfast-skill/issues",
+  "privacyPolicyUrl": "https://smtpfa.st/privacy",
+  "termsOfServiceUrl": "https://smtpfa.st/terms"
 }

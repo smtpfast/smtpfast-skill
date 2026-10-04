@@ -22,7 +22,7 @@ Trigger on requests like:
 
 - **Base URL:** `https://smtpfa.st/api`
 - **API version:** all endpoints are under `/v1`, so a full URL looks like `https://smtpfa.st/api/v1/emails`.
-- **Auth:** a Bearer token on every request. Create an API key in the [SMTPfast dashboard](https://smtpfa.st) and send it as `Authorization: Bearer sf_live_...`. Never hardcode it; read it from an environment variable (`SMTPFAST_API_KEY`).
+- **Auth:** inside Claude, prefer the connected SMTPfast MCP server: it signs in with OAuth, so no key is needed. Direct HTTP calls send a Bearer token, `Authorization: Bearer sf_...`, with an API key created in the [SMTPfast dashboard](https://smtpfa.st). Ask the user for a key when you need one; never look for keys in files, shell history or environment variables. In code you write for the user's app, take the key from the app's own secret store and never hardcode it. The examples below write the key as `sf_your_api_key`.
 - **Content type:** `application/json`.
 - **Sending domain:** the `from` address must belong to a domain you have verified in SMTPfast (or a receiving subdomain the team added under one). If a send fails with a domain error, verify the domain first (see the Domains endpoints).
 - **Resend-compatible:** emails, templates, inboxes, contacts, segments and webhook events use Resend's paths and field names. Code written for Resend works with the base URL `https://smtpfa.st/api/v1` and an SMTPfast key.
@@ -35,7 +35,7 @@ Pass an `Idempotency-Key` header on anything a user could trigger twice. A repea
 
 ```bash
 curl -X POST https://smtpfa.st/api/v1/emails \
-  -H "Authorization: Bearer $SMTPFAST_API_KEY" \
+  -H "Authorization: Bearer sf_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
     "from": "hello@yourapp.com",
@@ -48,11 +48,11 @@ curl -X POST https://smtpfa.st/api/v1/emails \
 A successful call returns `200` with just the new email's id, as Resend does: `{ "id": "..." }`. The email is queued and sent asynchronously; fetch it by id (below) or use a webhook to follow it to `delivered`.
 
 ```javascript
-// Node 18+ (built-in fetch)
+// Node 18+ (built-in fetch). apiKey is the SMTPfast API key, from your app's secret store.
 const res = await fetch("https://smtpfa.st/api/v1/emails", {
   method: "POST",
   headers: {
-    Authorization: `Bearer ${process.env.SMTPFAST_API_KEY}`,
+    Authorization: `Bearer ${apiKey}`,
     "Content-Type": "application/json",
   },
   body: JSON.stringify({
@@ -82,7 +82,7 @@ Templates live in SMTPfast with variables and a draft/published version. Send on
 
 ```bash
 curl -X POST https://smtpfa.st/api/v1/emails \
-  -H "Authorization: Bearer $SMTPFAST_API_KEY" \
+  -H "Authorization: Bearer sf_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
     "to": "ada@example.com",
@@ -102,7 +102,7 @@ To send up to 100 emails in one request, POST a JSON array of the same email obj
 
 ```bash
 curl https://smtpfa.st/api/v1/emails/email_abc123 \
-  -H "Authorization: Bearer $SMTPFAST_API_KEY"
+  -H "Authorization: Bearer sf_your_api_key"
 ```
 
 Returns the email's current `status` and its delivery events (queued, sent, delivered, bounced, complained, opened, clicked). Prefer webhooks over polling for anything real-time (see below).
@@ -114,20 +114,20 @@ Inbound is per domain (paid plans). Enable it, publish the MX record the respons
 ```bash
 # turn receiving on for a verified domain
 curl -X PATCH https://smtpfa.st/api/v1/domains/DOMAIN_ID \
-  -H "Authorization: Bearer $SMTPFAST_API_KEY" \
+  -H "Authorization: Bearer sf_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{"receiving_enabled": true}'
 
 # list received mail, then fetch one with its body and attachments
-curl https://smtpfa.st/api/v1/emails/receiving -H "Authorization: Bearer $SMTPFAST_API_KEY"
-curl https://smtpfa.st/api/v1/emails/receiving/RECEIVED_ID -H "Authorization: Bearer $SMTPFAST_API_KEY"
+curl https://smtpfa.st/api/v1/emails/receiving -H "Authorization: Bearer sf_your_api_key"
+curl https://smtpfa.st/api/v1/emails/receiving/RECEIVED_ID -H "Authorization: Bearer sf_your_api_key"
 ```
 
 Reply in the same thread with `POST /v1/emails/receiving/{id}/reply`. Every field is optional: with an empty body it replies to the sender, from the address the mail arrived at, with `Re:` and the original quoted underneath. It sets `In-Reply-To` and `References`, so the answer lands in the existing conversation instead of starting a new one.
 
 ```bash
 curl -X POST https://smtpfa.st/api/v1/emails/receiving/RECEIVED_ID/reply \
-  -H "Authorization: Bearer $SMTPFAST_API_KEY" \
+  -H "Authorization: Bearer sf_your_api_key" \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: reply-RECEIVED_ID" \
   -d '{"text": "Thanks, we are on it."}'
