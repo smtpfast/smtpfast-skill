@@ -1,12 +1,12 @@
 # Send an email: examples
 
-Every example reads the API key from the `SMTPFAST_API_KEY` environment variable and posts to `https://smtpfa.st/api/v1/emails`.
+Every example posts to `https://smtpfa.st/api/v1/emails` with an API key. The code takes the key as an argument: pass it in from your app's secret store, and never hardcode it. The curl example writes it as `sf_your_api_key`.
 
 ## curl
 
 ```bash
 curl -X POST https://smtpfa.st/api/v1/emails \
-  -H "Authorization: Bearer $SMTPFAST_API_KEY" \
+  -H "Authorization: Bearer sf_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
     "from": "hello@yourapp.com",
@@ -20,11 +20,11 @@ curl -X POST https://smtpfa.st/api/v1/emails \
 ## Node.js (18+, built-in fetch)
 
 ```javascript
-async function sendEmail() {
+async function sendEmail(apiKey) {
   const res = await fetch("https://smtpfa.st/api/v1/emails", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${process.env.SMTPFAST_API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -46,38 +46,39 @@ async function sendEmail() {
 ## Python (requests)
 
 ```python
-import os
 import requests
 
-resp = requests.post(
-    "https://smtpfa.st/api/v1/emails",
-    headers={
-        "Authorization": f"Bearer {os.environ['SMTPFAST_API_KEY']}",
-        "Content-Type": "application/json",
-    },
-    json={
-        "from": "hello@yourapp.com",
-        "to": ["user@example.com"],
-        "subject": "Welcome!",
-        "html": "<h1>Hello!</h1>",
-        "text": "Hello!",
-    },
-    timeout=15,
-)
-resp.raise_for_status()
-email = resp.json()  # {"id": "..."}
+def send_email(api_key: str) -> dict:
+    resp = requests.post(
+        "https://smtpfa.st/api/v1/emails",
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "from": "hello@yourapp.com",
+            "to": ["user@example.com"],
+            "subject": "Welcome!",
+            "html": "<h1>Hello!</h1>",
+            "text": "Hello!",
+        },
+        timeout=15,
+    )
+    resp.raise_for_status()
+    return resp.json()  # {"id": "..."}
 ```
 
 ## PHP (curl)
 
 ```php
 <?php
+// $apiKey comes from your app's secret store.
 $ch = curl_init("https://smtpfa.st/api/v1/emails");
 curl_setopt_array($ch, [
     CURLOPT_POST => true,
     CURLOPT_RETURNTRANSFER => true,
     CURLOPT_HTTPHEADER => [
-        "Authorization: Bearer " . getenv("SMTPFAST_API_KEY"),
+        "Authorization: Bearer " . $apiKey,
         "Content-Type: application/json",
     ],
     CURLOPT_POSTFIELDS => json_encode([
