@@ -24,7 +24,7 @@ async function sendEmail(apiKey) {
   const res = await fetch("https://smtpfa.st/api/v1/emails", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: "Bearer " + apiKey,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -52,7 +52,7 @@ def send_email(api_key: str) -> dict:
     resp = requests.post(
         "https://smtpfa.st/api/v1/emails",
         headers={
-            "Authorization": f"Bearer {api_key}",
+            "Authorization": "Bearer " + api_key,
             "Content-Type": "application/json",
         },
         json={

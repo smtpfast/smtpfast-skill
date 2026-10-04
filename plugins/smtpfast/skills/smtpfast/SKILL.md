@@ -52,7 +52,7 @@ A successful call returns `200` with just the new email's id, as Resend does: `{
 const res = await fetch("https://smtpfa.st/api/v1/emails", {
   method: "POST",
   headers: {
-    Authorization: `Bearer ${apiKey}`,
+    Authorization: "Bearer " + apiKey,
     "Content-Type": "application/json",
   },
   body: JSON.stringify({
