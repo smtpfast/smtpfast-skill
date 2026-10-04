@@ -4,7 +4,7 @@ Every operation in the SMTPfast API, generated from the live OpenAPI spec (`http
 
 Base URL `https://smtpfa.st/api`, auth `Authorization: Bearer <API_KEY>`. For fields, examples and gotchas, read `api-reference.md`; for anything it does not cover, fetch the spec.
 
-135 operations.
+137 operations.
 
 ## Logs
 
@@ -66,6 +66,7 @@ Addresses on your own domains organised as mailboxes: threads, labels, folders a
 | POST | `/v1/inboxes/{inbox_id}/threads/{thread_id}/emails/{email_id}/forward` | Forward a thread email |
 | GET | `/v1/inboxes/{inbox_id}/labels` | List labels |
 | POST | `/v1/inboxes/{inbox_id}/labels` | Create a label |
+| GET | `/v1/inboxes/{inbox_id}/labels/{label_id}` | Retrieve a label |
 | PATCH | `/v1/inboxes/{inbox_id}/labels/{label_id}` | Update a label |
 | DELETE | `/v1/inboxes/{inbox_id}/labels/{label_id}` | Delete a label |
 | GET | `/v1/inboxes/{inbox_id}/drafts` | List drafts |
@@ -123,6 +124,7 @@ Members and invitations
 | DELETE | `/v1/team/members/{id}` | Remove a member |
 | GET | `/v1/team/invites` | List pending invitations |
 | POST | `/v1/team/invites` | Invite someone to the team |
+| GET | `/v1/team/invites/{id}` | Retrieve a pending invitation |
 | DELETE | `/v1/team/invites/{id}` | Revoke an invitation |
 
 ## Suppressions
