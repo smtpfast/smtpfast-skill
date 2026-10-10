@@ -78,8 +78,8 @@ Reading, labelling and drafts need `inbound:read`; deleting needs `inbound:delet
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| POST | `/v1/contacts` | Create or upsert a contact. |
-| GET | `/v1/contacts` | List/search contacts (paginated). |
+| POST | `/v1/contacts` | One contact: create only, `409` if the email exists. `{"contacts": [...]}` (up to 500): upsert by email, fires no webhooks, and `"unsubscribed": false` re-subscribes. |
+| GET | `/v1/contacts` | List/search contacts. Pages by `page` (from 1) and `limit` (up to 100), not by cursor; `has_more` says whether another page exists. |
 | GET | `/v1/contacts/{id}` | Get a contact. |
 | PATCH | `/v1/contacts/{id}` | Update a contact. |
 | DELETE | `/v1/contacts/{id}` | Delete a contact. |

@@ -5,7 +5,7 @@ Teaches Claude to use the [SMTPfast](https://smtpfa.st) email API, and connects 
 ## What it contains
 
 - **Skill `smtpfast`** (`skills/smtpfast/SKILL.md`): how to send transactional email (raw content or hosted templates), receive inbound email, work an inbox with drafts that a person approves, manage contacts, segments, sending domains and suppressions, run broadcasts, and set up webhooks. `references/api-reference.md` explains each endpoint; `references/endpoints.md` lists every operation, generated from the live OpenAPI spec.
-- **MCP server `smtpfast`** (`.mcp.json`): the hosted server at `https://smtpfa.st/api/mcp`, over Streamable HTTP.
+- **MCP server `smtpfast`** (`.mcp.json`): the hosted server at `https://smtpfa.st/api/mcp`, over Streamable HTTP. If you already added this server with `claude mcp add`, remove one of the two: they share the name and each needs its own sign-in.
 
 ## What it connects to and sends
 
