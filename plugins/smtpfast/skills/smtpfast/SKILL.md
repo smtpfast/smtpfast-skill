@@ -72,9 +72,17 @@ const { id } = await res.json(); // { id: "..." }
 
 More languages (Python, PHP) are in `examples/send-email.md`.
 
+### Transactional or marketing (`category`)
+
+Every email is `marketing` or `transactional`. Label password resets, receipts, alerts and other mail the recipient needs because of an action or account with `"category": "transactional"` (over SMTP: the header `X-SMTPfast-Category: transactional`). A transactional email skips marketing opt-outs and gets no `List-Unsubscribe` header, so a newsletter unsubscribe never blocks a password reset. Unlabelled mail is `marketing`, as is any email containing `{{unsubscribe_url}}` (the link must work). Never label promotions transactional to reach people who opted out. Hard bounces, complaints and manual suppressions block both kinds.
+
+```json
+{ "from": "...", "to": ["..."], "subject": "Reset your password", "html": "...", "category": "transactional" }
+```
+
 ### Unsubscribe links (marketing and bulk mail)
 
-For any non-essential mail, include the placeholder `{{unsubscribe_url}}` anywhere in your `html` (or `text`). SMTPfast substitutes the per-recipient unsubscribe link at send time and automatically sets the RFC 8058 `List-Unsubscribe` header. This keeps you compliant and helps deliverability.
+For marketing mail, include the placeholder `{{unsubscribe_url}}` anywhere in your `html` (or `text`). SMTPfast substitutes the per-recipient unsubscribe link at send time and sets the RFC 8058 `List-Unsubscribe` header on marketing mail. A click adds a suppression with `scope: "marketing"`, which stops marketing mail only.
 
 ```json
 { "html": "<p>...</p><p><a href=\"{{unsubscribe_url}}\">Unsubscribe</a></p>" }
@@ -204,7 +212,7 @@ curl -X POST https://smtpfa.st/api/v1/contacts -H "Authorization: Bearer sf_your
 - In the bulk upsert, fields you send replace stored ones and fields you leave out stay; `segment_ids` only adds memberships. `"unsubscribed": false` clears the contact's flag but does not undo a recipient's own opt-out: an unsubscribe link also adds a suppression (reason `unsubscribe`) that keeps blocking sends until an owner or admin removes it. Leave `unsubscribed` out of routine syncs.
 - The bulk form fires no `contact.*` webhooks. `contact.created` comes from the single POST, `contact.updated` from `PATCH /v1/contacts/{id}`.
 - `GET /v1/contacts` pages by number (`page`, starting at 1, and `limit`, up to 100), not by cursor; `has_more` says whether another page exists.
-- To tell a recipient's own opt-out from an API change, read the contact: a self-unsubscribe shows as `suppression` with `reason: "unsubscribe"` and its `created_at`. It also fires `email.unsubscribed` (with `email_id`, `from`, `to`) once, when it can be tied to an email sent in the last 30 days; it never fires `contact.updated`.
+- To tell a recipient's own opt-out from an API change, read the contact: a self-unsubscribe shows as `suppression` with `reason: "unsubscribe"`, its `created_at`, and `scope` (`marketing` for new opt-outs; older ones are `all` and block every send). It also fires `email.unsubscribed` (with `email_id`, `from`, `to`) once, when it can be tied to an email sent in the last 30 days; it never fires `contact.updated`.
 
 ## Webhooks
 
@@ -235,7 +243,7 @@ Always check `res.ok` (or the status code) and surface the response body on fail
 - In the user's app, keep the API key in an env var or secret store, never in code or logs.
 - Send a `text` fallback alongside `html` for deliverability.
 - Use webhooks, not polling loops, to react to delivery events.
-- Include `{{unsubscribe_url}}` on anything that is not strictly transactional.
+- Include `{{unsubscribe_url}}` on marketing mail, and label transactional mail `category: "transactional"`.
 - On `429`/`5xx`, retry with exponential backoff; on `400`/`401`, fix the request rather than retrying.
 
 ---
