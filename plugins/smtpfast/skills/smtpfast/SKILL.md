@@ -124,7 +124,7 @@ Returns the email's current `status` and its delivery events (queued, sent, deli
   "unsubscribed_at": null, "last_event": "delivered", "events": [{ "type": "delivered", "metadata": null, "timestamp": "..." }] }
 ```
 
-- `html` and `text` are the body as submitted: `{{unsubscribe_url}}` shows unreplaced here, because each recipient's copy gets its own link at send time.
+- `html` and `text` are the stored body. For an API send (your own HTML or a template) `{{unsubscribe_url}}` shows unreplaced here; the link is added when the email goes out, one per message, made for the first To address. Send separate messages when each person needs their own link.
 - An `opened` event can come from Gmail's or Apple Mail's image proxy seconds after delivery, not from a person. Treat opens as a trend; clicks are the stronger signal.
 
 ## Receive email
@@ -201,10 +201,10 @@ curl -X POST https://smtpfa.st/api/v1/contacts -H "Authorization: Bearer sf_your
 ```
 
 - Name fields can be sent as `first_name` or `firstName`; responses always use snake_case.
-- In the bulk upsert, fields you send replace stored ones and fields you leave out stay. **`"unsubscribed": false` re-subscribes a contact, even one who clicked an unsubscribe link.** Leave `unsubscribed` out of routine syncs.
+- In the bulk upsert, fields you send replace stored ones and fields you leave out stay; `segment_ids` only adds memberships. `"unsubscribed": false` clears the contact's flag but does not undo a recipient's own opt-out: an unsubscribe link also adds a suppression (reason `unsubscribe`) that keeps blocking sends until an owner or admin removes it. Leave `unsubscribed` out of routine syncs.
 - The bulk form fires no `contact.*` webhooks. `contact.created` comes from the single POST, `contact.updated` from `PATCH /v1/contacts/{id}`.
 - `GET /v1/contacts` pages by number (`page`, starting at 1, and `limit`, up to 100), not by cursor; `has_more` says whether another page exists.
-- A recipient who unsubscribes themselves fires `email.unsubscribed` (with `email_id`, `from`, `to`), not `contact.updated`. Listen for it to keep your own opt-out records.
+- To tell a recipient's own opt-out from an API change, read the contact: a self-unsubscribe shows as `suppression` with `reason: "unsubscribe"` and its `created_at`. It also fires `email.unsubscribed` (with `email_id`, `from`, `to`) once, when it can be tied to an email sent in the last 30 days; it never fires `contact.updated`.
 
 ## Webhooks
 
@@ -216,7 +216,7 @@ A hosted MCP server is at `https://smtpfa.st/api/mcp` (OAuth or API key), and a 
 
 - The SMTPfast Claude Code plugin already includes the MCP server. Use the plugin **or** `claude mcp add`, not both, or the user ends up with two servers named smtpfast that each need a sign-in.
 - With `claude mcp add`, pass `--scope user` so the server works in every project; without it, it is saved for the current folder only.
-- An OAuth sign-in with no scopes requested gets email send and read, domain read, contact read and write, webhook read, logs read and inbound read. Templates are created and published with `email:send`.
+- OAuth can grant any scope except key and team management. A sign-in with no scopes requested gets email send and read, domain read, contact read and write, webhook read, logs read and inbound read. Templates are created and published with `email:send`.
 
 ## Handling responses and errors
 
