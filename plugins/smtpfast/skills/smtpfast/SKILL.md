@@ -184,6 +184,7 @@ How to use each endpoint, with fields and gotchas, is in `references/api-referen
 - **Suppressions** (`/v1/suppressions`): manage the do-not-send list (unsubscribes, bounces, complaints).
 - **Broadcasts** (`/v1/broadcasts`): create a campaign, send a test, then send or cancel it. On a new sending domain or account, set `send_over_minutes` (for example 240) to spread the send over a few hours, so each hour stays under the warm-up hourly cap.
 - **Domains** (`/v1/domains`): add a sending domain and trigger DNS verification.
+- **Link domains** (`/v1/link-domains`, paid plans): serve tracking and unsubscribe links from your own hostname, such as `links.example.com`. Publish one CNAME to `links.smtpfa.st`; the certificate is automatic.
 - **Webhooks** (`/v1/webhooks`): subscribe to delivery events; the preferred way to track status. `/deliveries` shows every attempt with the response we got back, and one can be retried.
 - **Logs** (`/v1/logs`): every email event for the team, filterable by type, time, recipient, domain and tag. Needs the `logs:read` scope.
 - **Share links** (`/v1/emails/{id}/share`): show a rendered sent email to someone without an account.
