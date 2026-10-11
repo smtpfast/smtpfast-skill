@@ -111,11 +111,11 @@ Reading, labelling and drafts need `inbound:read`; deleting needs `inbound:delet
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| GET/POST | `/v1/broadcasts` | List or create broadcasts (campaigns). |
+| GET/POST | `/v1/broadcasts` | List or create broadcasts (campaigns). Optional `send_over_minutes`: 0 (all at once, the default) or 15 to 4320, to spread the send evenly over that window. |
 | GET/PATCH/DELETE | `/v1/broadcasts/{id}` | Manage a broadcast. |
 | POST | `/v1/broadcasts/{id}/test` | Send a test of the broadcast. |
-| POST | `/v1/broadcasts/{id}/send` | Send the broadcast. |
-| POST | `/v1/broadcasts/{id}/cancel` | Cancel a scheduled/sending broadcast. |
+| POST | `/v1/broadcasts/{id}/send` | Send the broadcast now, or at `scheduled_at`. `send_over_minutes` here overrides the saved value; left out, the saved value applies. Progress shows in `metrics.handed_off`. |
+| POST | `/v1/broadcasts/{id}/cancel` | Cancel a scheduled/sending broadcast. For a spread send, the emails that have not gone out yet are dropped. |
 | GET | `/v1/broadcasts/audience` | How many contacts a broadcast would reach, before you send it. |
 | GET | `/v1/broadcasts/{id}/recipients` | Recipients for one event `type` (sent, delivered, opened, clicked, bounced, ...), newest first, with cursors. |
 | GET | `/v1/broadcasts/{id}/clicked-links` | Every link clicked in the broadcast, with total and unique clicks. |
