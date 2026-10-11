@@ -4,7 +4,7 @@ Every operation in the SMTPfast API, generated from the live OpenAPI spec (`http
 
 Base URL `https://smtpfa.st/api`, auth `Authorization: Bearer <API_KEY>`. For fields, examples and gotchas, read `api-reference.md`; for anything it does not cover, fetch the spec.
 
-137 operations.
+142 operations.
 
 ## Logs
 
@@ -175,7 +175,7 @@ Reusable emails with variables, Resend-compatible: draft, publish, then send by 
 
 ## Domains
 
-Manage and verify sending domains
+Manage and verify sending domains, and the custom link domains under them
 
 | Method | Path | Summary |
 | --- | --- | --- |
@@ -189,6 +189,11 @@ Manage and verify sending domains
 | POST | `/v1/domains/{id}/verify` | Verify a domain |
 | POST | `/v1/domains/{id}/domain-connect/cloudflare` | Set up sending DNS on Cloudflare in one click |
 | POST | `/v1/domains/{id}/domain-connect/cloudflare-inbound` | Set up receiving DNS on Cloudflare in one click |
+| GET | `/v1/link-domains` | List link domains |
+| POST | `/v1/link-domains` | Add a link domain |
+| GET | `/v1/link-domains/{id}` | Get a link domain |
+| DELETE | `/v1/link-domains/{id}` | Delete a link domain |
+| POST | `/v1/link-domains/{id}/refresh` | Refresh a link domain's status |
 
 ## API Keys
 
