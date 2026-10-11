@@ -68,7 +68,7 @@ Resend-compatible Inboxes API. All paths are under `/v1/inboxes/{inbox_id}`.
 | GET | `.../threads/{thread_id}/emails/{email_id}` | One message with body and `verdicts`. |
 | POST | `.../threads/{thread_id}/emails/{email_id}/reply` | Reply in the thread. Needs `email:send`. |
 | POST | `.../threads/{thread_id}/emails/{email_id}/forward` | Forward a message. Needs `email:send`. |
-| GET/POST | `.../labels`, PATCH/DELETE `.../labels/{label_id}` | Manage labels. |
+| GET/POST | `.../labels`, GET/PATCH/DELETE `.../labels/{label_id}` | Manage labels. |
 | GET/POST | `.../drafts`, GET/PATCH/DELETE `.../drafts/{draft_id}` | Drafts for a person to review. |
 | POST | `.../drafts/{draft_id}/send` | Send a draft. Pass the reviewed `revision`; a changed draft answers `409`. |
 
@@ -135,6 +135,16 @@ Reading, labelling and drafts need `inbound:read`; deleting needs `inbound:delet
 | POST | `/v1/domains/{id}/domain-connect/cloudflare-inbound` | Same for the inbound MX record. |
 
 A domain must be verified before you can send `from` an address on it. Enabling receiving needs a verified domain, a paid plan and a key created by a team owner or admin; the response carries the MX record to publish and a `receiving.status` of `disabled`, `pending`, `active` or `failed`.
+
+## Link domains
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET/POST | `/v1/link-domains` | List link domains, or add one: `{"hostname": "links.example.com"}`. |
+| GET/DELETE | `/v1/link-domains/{id}` | Get one with its `dns_records`, or delete it. |
+| POST | `/v1/link-domains/{id}/refresh` | Ask for the current status now instead of waiting for the automatic check. |
+
+A link domain makes the open pixel, tracked links, the unsubscribe link and the `List-Unsubscribe` header use your hostname instead of `smtpfa.st`. Paid plans only: creating one on the free plan answers 403 with `code: "plan_upgrade_required"`, and on the free plan mail uses `smtpfa.st` links even through a link domain added earlier. The hostname must be a subdomain of a verified sending domain (422 `no_matching_domain` or `domain_not_verified` otherwise), one per sending domain (409 `link_domain_exists`). Publish the one required record, a CNAME from the hostname to `links.smtpfa.st` (on Cloudflare DNS it can stay DNS only); the certificate is issued automatically and `status` goes from `pending` to `active`, usually within minutes. A TXT record in `dns_records` is optional: it only lets the hostname activate before the CNAME is live, and once active it shows `status: "not_needed"`. Keep the CNAME (it shows `verified`), because certificate renewals need it. While active, it applies to every email whose From address is on the same registrable domain. The list response has `available` (503 `link_domains_unavailable` when false) and `included_in_plan`. Needs `domain:read` and `domain:write`; adding and deleting need an owner or admin key.
 
 ## Inbound (receiving)
 
@@ -213,7 +223,7 @@ A key created without a `scopes` field gets `email:send`, `email:read`, `domain:
 | --- | --- | --- |
 | GET | `/v1/team/members` | Members with their roles (`team:read`). |
 | PATCH/DELETE | `/v1/team/members/{id}` | Change a role or billing access, or remove a member (`team:manage`, owner or admin). |
-| GET/POST | `/v1/team/invites`, DELETE `/v1/team/invites/{id}` | Pending invitations: list, invite, revoke. |
+| GET/POST | `/v1/team/invites`, GET/DELETE `/v1/team/invites/{id}` | Pending invitations: list, invite, read one, revoke. |
 
 ## API keys and analytics
 
