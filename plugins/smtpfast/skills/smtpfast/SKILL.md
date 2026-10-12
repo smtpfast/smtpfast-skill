@@ -80,6 +80,14 @@ Every email is `marketing` or `transactional`. Label password resets, receipts, 
 { "from": "...", "to": ["..."], "subject": "Reset your password", "html": "...", "category": "transactional" }
 ```
 
+### Links with secrets: turn off tracking (`track_clicks`)
+
+Click tracking sends every link through a redirect and records the full URL (readable via `GET /v1/emails/clicked-links`). For a password reset, sign-in or email-change link that carries a token, keep it out: `"track_clicks": false` (and `"track_opens": false` for no pixel) on that email, or `data-smtpfast-track="off"` on just that `<a>` tag. Over SMTP, use the headers `X-SMTPfast-Track-Clicks: false` and `X-SMTPfast-Track-Opens: false`. The headers and the attribute are removed before sending. Left out, the account's tracking settings apply.
+
+```json
+{ "subject": "Reset your password", "html": "<a data-smtpfast-track=\"off\" href=\"https://app.example/reset?token=...\">Reset</a>", "category": "transactional", "track_clicks": false }
+```
+
 ### Unsubscribe links (marketing and bulk mail)
 
 For marketing mail, include the placeholder `{{unsubscribe_url}}` anywhere in your `html` (or `text`). SMTPfast substitutes the per-recipient unsubscribe link at send time and sets the RFC 8058 `List-Unsubscribe` header on marketing mail. A click adds a suppression with `scope: "marketing"`, which stops marketing mail only.
@@ -245,6 +253,7 @@ Always check `res.ok` (or the status code) and surface the response body on fail
 - Send a `text` fallback alongside `html` for deliverability.
 - Use webhooks, not polling loops, to react to delivery events.
 - Include `{{unsubscribe_url}}` on marketing mail, and label transactional mail `category: "transactional"`.
+- Send links that carry tokens with `track_clicks: false` or `data-smtpfast-track="off"`, so the token never passes through the click tracker.
 - On `429`/`5xx`, retry with exponential backoff; on `400`/`401`, fix the request rather than retrying.
 
 ---
