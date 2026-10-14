@@ -4,7 +4,7 @@ Every operation in the SMTPfast API, generated from the live OpenAPI spec (`http
 
 Base URL `https://smtpfa.st/api`, auth `Authorization: Bearer <API_KEY>`. For fields, examples and gotchas, read `api-reference.md`; for anything it does not cover, fetch the spec.
 
-142 operations.
+144 operations.
 
 ## Logs
 
@@ -157,6 +157,8 @@ Create, test, schedule, cancel, and measure broadcast campaigns
 | POST | `/v1/broadcasts/{id}/duplicate` | Duplicate broadcast |
 | POST | `/v1/broadcasts/{id}/send` | Send or schedule a broadcast |
 | POST | `/v1/broadcasts/{id}/cancel` | Cancel a scheduled broadcast |
+| POST | `/v1/broadcasts/{id}/archive` | Archive a broadcast |
+| POST | `/v1/broadcasts/{id}/unarchive` | Unarchive a broadcast |
 | POST | `/v1/broadcasts/{id}/test` | Send a test broadcast email |
 
 ## Templates
