@@ -4,7 +4,7 @@ Every operation in the SMTPfast API, generated from the live OpenAPI spec (`http
 
 Base URL `https://smtpfa.st/api`, auth `Authorization: Bearer <API_KEY>`. For fields, examples and gotchas, read `api-reference.md`; for anything it does not cover, fetch the spec.
 
-146 operations.
+150 operations.
 
 ## Logs
 
@@ -126,6 +126,17 @@ Members and invitations
 | POST | `/v1/team/invites` | Invite someone to the team |
 | GET | `/v1/team/invites/{id}` | Retrieve a pending invitation |
 | DELETE | `/v1/team/invites/{id}` | Revoke an invitation |
+
+## Billing
+
+The plan, usage against its limits, invoices, and Checkout and billing portal links
+
+| Method | Path | Summary |
+| --- | --- | --- |
+| GET | `/v1/billing` | Get the plan and usage |
+| POST | `/v1/billing/checkout` | Get a link to start or change a plan |
+| POST | `/v1/billing/portal` | Get a link to the billing portal |
+| GET | `/v1/billing/invoices` | List invoices |
 
 ## Suppressions
 
