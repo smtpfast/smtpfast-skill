@@ -4,7 +4,7 @@ Every operation in the SMTPfast API, generated from the live OpenAPI spec (`http
 
 Base URL `https://smtpfa.st/api`, auth `Authorization: Bearer <API_KEY>`. For fields, examples and gotchas, read `api-reference.md`; for anything it does not cover, fetch the spec.
 
-150 operations.
+158 operations.
 
 ## Logs
 
@@ -106,12 +106,16 @@ Manage subscribers, subscription status, and custom properties
 
 ## Account
 
-The calling key or connection: scopes, team and plan usage
+The calling key or connection: scopes, team and plan usage, and activating a new account
 
 | Method | Path | Summary |
 | --- | --- | --- |
 | GET | `/v1/me` | What this API key can do |
 | GET | `/v1/usage` | Usage against the plan |
+| GET | `/v1/account/activation` | Whether the account is active |
+| POST | `/v1/account/activation/free-trial` | Ask for the free plan |
+| POST | `/v1/account/activation/invite` | Activate with an invite code |
+| POST | `/v1/account/activation/checkout` | Activate with a paid plan |
 
 ## Team
 
@@ -220,6 +224,17 @@ Create, list, and revoke API keys
 | POST | `/v1/api-keys` | Create API key |
 | PATCH | `/v1/api-keys/{id}` | Update API key |
 | DELETE | `/v1/api-keys/{id}` | Revoke API key |
+
+## CLI Login
+
+The device login behind smtpfast login and the emailed-code signup behind smtpfast signup
+
+| Method | Path | Summary |
+| --- | --- | --- |
+| POST | `/v1/cli/device` | Start a CLI login |
+| POST | `/v1/cli/token` | Collect the CLI login key |
+| POST | `/v1/cli/signup` | Start a signup from the CLI |
+| POST | `/v1/cli/signup/verify` | Finish a CLI signup with the emailed code |
 
 ## Webhooks
 
