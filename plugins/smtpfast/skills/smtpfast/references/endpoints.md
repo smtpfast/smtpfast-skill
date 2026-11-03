@@ -4,7 +4,7 @@ Every operation in the SMTPfast API, generated from the live OpenAPI spec (`http
 
 Base URL `https://smtpfa.st/api`, auth `Authorization: Bearer <API_KEY>`. For fields, examples and gotchas, read `api-reference.md`; for anything it does not cover, fetch the spec.
 
-161 operations.
+162 operations.
 
 ## Logs
 
@@ -77,6 +77,7 @@ Addresses on your own domains organised as mailboxes: threads, labels, folders a
 | GET | `/v1/inboxes/{inbox_id}/drafts/{draft_id}` | Retrieve a draft |
 | PATCH | `/v1/inboxes/{inbox_id}/drafts/{draft_id}` | Update a draft |
 | DELETE | `/v1/inboxes/{inbox_id}/drafts/{draft_id}` | Delete a draft |
+| GET | `/v1/inboxes/{inbox_id}/drafts/{draft_id}/attachments/{attachment_id}` | Retrieve a draft attachment |
 | POST | `/v1/inboxes/{inbox_id}/drafts/{draft_id}/send` | Send a draft |
 
 ## Contacts
