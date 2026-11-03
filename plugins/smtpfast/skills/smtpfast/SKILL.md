@@ -173,7 +173,7 @@ Replying needs `email:send` as well as `inbound:read`.
 
 ### Inboxes, and drafts for a person to approve
 
-An address on a receiving domain can be organised as an inbox: received mail and replies grouped into threads, with folders (`inbox`, `archive`, `spam`, `sent`, `trash`), labels and drafts. The API matches Resend's Inboxes API under `/v1/inboxes/{inbox_id}/...` (threads, thread emails, labels, drafts, reply, forward).
+An address on a receiving domain can be organised as an inbox: received mail and replies grouped into threads, with folders (`inbox`, `archive`, `spam`, `sent`, `trash`), labels, drafts, assignment to a team member, internal notes and Gmail-style search. The API matches Resend's Inboxes API under `/v1/inboxes/{inbox_id}/...` (threads, thread emails, labels, drafts, reply, forward).
 
 When an agent answers email for a person, prefer drafts over sending:
 
@@ -239,7 +239,7 @@ A hosted MCP server is at `https://smtpfa.st/api/mcp` (OAuth or API key), and a 
 
 - **2xx:** success. Sends return `200` with `{ "id": ... }` (or the batch result).
 - **400:** bad request (missing `from`/`to`/`subject`, malformed body, unverified domain). Read the error message; do not retry blindly.
-- **401 / 403:** bad or missing API key, or the key lacks a scope. A 403 names the scope it wanted. A new API key does not get `logs:read`, `inbound:read`, `inbound:delete`, `team:read`, `team:manage` or `apikey:manage` unless they are picked, so a key made before you needed them will not have them: ask for a key with the scope rather than retrying. `GET /v1/me` shows the key's scopes, plan and limits in one call.
+- **401 / 403:** bad or missing API key, or the key lacks a scope. A 403 names the scope it wanted. A new API key does not get `logs:read`, `inbound:read`, `inbound:delete`, `team:read`, `team:manage`, `billing:read`, `billing:manage` or `apikey:manage` unless they are picked, so a key made before you needed them will not have them: ask for a key with the scope rather than retrying. `GET /v1/me` shows the key's scopes, plan and limits in one call.
 - **409:** conflict, for example an `Idempotency-Key` reused with different content, or a draft that changed since you read it. Read the message.
 - **422:** valid request that cannot be carried out, for example an unpublished template or missing template variables.
 - **429:** rate limited. Back off and retry with exponential delay.

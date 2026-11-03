@@ -27,7 +27,7 @@ All request/response bodies are JSON. IDs are prefixed strings (e.g. `email_abc1
 | `text` | string | no | Plain-text fallback. Same placeholder support. |
 | `cc` | string[] | no | |
 | `bcc` | string[] | no | |
-| `reply_to` | string | no | |
+| `reply_to` | string or string[] | no | Up to 50 addresses; every one goes in the Reply-To header. |
 | `headers` | object | no | Custom headers. |
 | `tags` | object/array | no | Labels for filtering and analytics. |
 | `scheduled_at` | string | no | ISO 8601. Holds the email until then, up to 30 days ahead. Works on `/v1/emails` and `/v1/emails/batch`. |
@@ -40,7 +40,7 @@ Response: `200` with `{ "id": "..." }`, as Resend returns. `GET /v1/emails/{id}`
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| GET | `/v1/emails/metrics` | Aggregate metrics (sent, delivered, opens, clicks, bounces, rates) for a time range. `start_date`, `end_date`, `timezone`, `granularity`, `metrics`, `dimensions` (period, domain, email, broadcast). |
+| GET | `/v1/emails/metrics` | Aggregate metrics (sent, delivered, opens, clicks, bounces, rates) for a time range. `start_date`, `end_date`, `timezone`, `granularity`, `metrics`, `dimensions` (period, domain, email, broadcast). `include=providers` adds sent email by mailbox provider (Gmail, Outlook, iCloud, Yahoo, Proton, other). |
 | GET | `/v1/emails/clicked-links` | Which links were clicked, across the account. |
 
 ## Templates
@@ -62,8 +62,10 @@ Resend-compatible Inboxes API. All paths are under `/v1/inboxes/{inbox_id}`.
 | --- | --- | --- |
 | GET/POST | `/v1/inboxes` | List inboxes, or turn an address on a receiving domain into one. |
 | GET/PATCH/DELETE | `/v1/inboxes/{inbox_id}` | Manage an inbox. |
-| GET | `.../threads` | List threads: `folder`, `label`, `query`, paging. |
-| GET/PATCH/DELETE | `.../threads/{thread_id}` | Read, mark read/unread, move folder, label, or delete a thread. |
+| GET | `.../threads` | List threads: `folder`, `label`, `query` (search, below), paging. |
+| GET/PATCH/DELETE | `.../threads/{thread_id}` | Read, mark read/unread, move folder, label, assign, or delete a thread. |
+| GET/POST | `.../threads/{thread_id}/notes` | Internal notes for the team, oldest first. Add one with `{"text": "..."}`: plain text, up to 5000 characters, 500 per thread. |
+| DELETE | `.../threads/{thread_id}/notes/{note_id}` | Remove a note. Its author can, and so can a team owner or admin. |
 | GET | `.../threads/{thread_id}/emails` | The messages in a thread (`latest=true` for the newest page first). |
 | GET | `.../threads/{thread_id}/emails/{email_id}` | One message with body and `verdicts`. |
 | POST | `.../threads/{thread_id}/emails/{email_id}/reply` | Reply in the thread. Needs `email:send`. |
@@ -71,8 +73,17 @@ Resend-compatible Inboxes API. All paths are under `/v1/inboxes/{inbox_id}`.
 | GET/POST | `.../labels`, GET/PATCH/DELETE `.../labels/{label_id}` | Manage labels. |
 | GET/POST | `.../drafts`, GET/PATCH/DELETE `.../drafts/{draft_id}` | Drafts for a person to review. |
 | POST | `.../drafts/{draft_id}/send` | Send a draft. Pass the reviewed `revision`; a changed draft answers `409`. |
+| GET | `.../drafts/{draft_id}/attachments/{attachment_id}` | One file of a draft with a download link that works for 15 minutes, so the person approving the draft can open it. 410 once the draft is sent. |
 
-Reading, labelling and drafts need `inbound:read`; deleting needs `inbound:delete`; replying, forwarding and sending drafts also need `email:send`.
+Reading, labelling, assigning, notes and drafts need `inbound:read`; deleting needs `inbound:delete`; replying, forwarding and sending drafts also need `email:send`.
+
+**Assignment.** `PATCH .../threads/{thread_id}` with `{"assignee_email": "ann@example.com"}` assigns the thread to a member of the team, and `null` unassigns it. An address outside the team is a 422 and nothing in the PATCH applies. Threads and list items return `assignee_email`, and a change sends `inbox.thread.assigned` or `inbox.thread.unassigned`.
+
+**Attachments.** Reply and forward take `attachments` in the `POST /v1/emails` shape: up to 10 files, base64, 10 MB each and 25 MB in total. On a draft, `attachments` replaces all of its files (`null` or `[]` removes them; no `path` or `content_id`), and `{"id": "..."}` keeps a stored file without uploading it again.
+
+**Notes** are never emailed, never part of a reply, forward or draft, and no webhook carries them.
+
+**Search.** `query` takes Gmail-style operators: `from:`, `to:` (a full address), `subject:`, `label:` (a label name), `has:attachment`, `is:read`, `is:unread`, and `after:` / `before:` with a `YYYY-MM-DD` date (UTC; `after:` includes that day, `before:` does not). Words and `"quoted phrases"` match the subject or a label name, every one must match, and a leading `-` excludes a term. `from:`, `to:`, `has:attachment`, `after:` and `before:` must all match the same message. Up to 256 characters and 32 terms; an invalid date is a 422 with name `validation_error`. Example: `from:ada@example.com is:unread after:2026-09-01 "late fee"`.
 
 ## Contacts
 
@@ -119,6 +130,7 @@ Reading, labelling and drafts need `inbound:read`; deleting needs `inbound:delet
 | GET | `/v1/broadcasts/audience` | How many contacts a broadcast would reach, before you send it. |
 | GET | `/v1/broadcasts/{id}/recipients` | Recipients for one event `type` (sent, delivered, opened, clicked, bounced, ...), newest first, with cursors. |
 | GET | `/v1/broadcasts/{id}/clicked-links` | Every link clicked in the broadcast, with total and unique clicks. |
+| POST | `/v1/broadcasts/{id}/archive`, `/v1/broadcasts/{id}/unarchive` | Hide a sent, canceled or failed broadcast from the default list, or bring it back. Its recipients and stats stay; list with `archived=true` (or `all`) to see archived ones. |
 | POST | `/v1/broadcasts/{id}/duplicate` | Copy into a new draft (content and targeting, not the schedule or history). Optional `name`. |
 
 ## Domains
@@ -143,6 +155,7 @@ A domain must be verified before you can send `from` an address on it. Enabling 
 | GET/POST | `/v1/link-domains` | List link domains, or add one: `{"hostname": "links.example.com"}`. |
 | GET/DELETE | `/v1/link-domains/{id}` | Get one with its `dns_records`, or delete it. |
 | POST | `/v1/link-domains/{id}/refresh` | Ask for the current status now instead of waiting for the automatic check. |
+| GET/POST | `/v1/link-domains/{id}/domain-connect` | Check whether the DNS provider can add the CNAME in one click (Domain Connect), or get a signed link the domain owner opens to approve it. A 409 gives the reason when it cannot, or when the link domain is not pending. 30 per 10 minutes per team. |
 
 A link domain makes the open pixel, tracked links, the unsubscribe link and the `List-Unsubscribe` header use your hostname instead of `smtpfa.st`. Paid plans only: creating one on the free plan answers 403 with `code: "plan_upgrade_required"`, and on the free plan mail uses `smtpfa.st` links even through a link domain added earlier. The hostname must be a subdomain of a verified sending domain (422 `no_matching_domain` or `domain_not_verified` otherwise), one per sending domain (409 `link_domain_exists`). Publish the one required record, a CNAME from the hostname to `links.smtpfa.st` (on Cloudflare DNS it can stay DNS only); the certificate is issued automatically and `status` goes from `pending` to `active`, usually within minutes. A TXT record in `dns_records` is optional: it only lets the hostname activate before the CNAME is live, and once active it shows `status: "not_needed"`. Keep the CNAME (it shows `verified`), because certificate renewals need it. While active, it applies to every email whose From address is on the same registrable domain. The list response has `available` (503 `link_domains_unavailable` when false) and `included_in_plan`. Needs `domain:read` and `domain:write`; adding and deleting need an owner or admin key.
 
@@ -191,7 +204,7 @@ Scopes: `inbound:read` for the reads, `inbound:delete` for the delete. Paths, pa
 | POST | `/v1/webhooks/{id}/events/{event_id}/replay` | Deliver an event again. |
 | POST | `/v1/webhooks/{id}/signing-secret/rotate` | New signing secret, returned once. Owner or admin. |
 
-Webhooks deliver delivery-event notifications (sent, delivered, bounced, complained, opened, clicked, unsubscribed) and `email.received` for inbound mail to your URL. Prefer them over polling.
+Webhooks deliver delivery-event notifications (sent, delivered, bounced, complained, opened, clicked, unsubscribed) and `email.received` for inbound mail to your URL. Inboxes add `inbox.email.received` (mail filed into an inbox thread), `inbox.thread.assigned` and `inbox.thread.unassigned`, with Resend's payloads. Prefer them over polling.
 
 ## Logs
 
@@ -215,7 +228,7 @@ Filters: `type`, `since`, `until`, `recipient`, `domain`, `domain_id`, `tag`, `e
 
 ## Scopes
 
-A key created without a `scopes` field gets `email:send`, `email:read`, `domain:read`, `domain:write`, `contact:read`, `contact:write`, `form:read`, `form:write`, `webhook:read` and `webhook:write`. These are never granted unless asked for: `logs:read`, `inbound:read`, `inbound:delete`, `team:read`, `team:manage`, and `apikey:manage` for minting further keys. A call that needs a scope the key lacks returns 403 naming the scope.
+A key created without a `scopes` field gets `email:send`, `email:read`, `domain:read`, `domain:write`, `contact:read`, `contact:write`, `form:read`, `form:write`, `webhook:read` and `webhook:write`. These are never granted unless asked for: `logs:read`, `inbound:read`, `inbound:delete`, `team:read`, `team:manage`, `billing:read`, `billing:manage`, and `apikey:manage` for minting further keys. A call that needs a scope the key lacks returns 403 naming the scope.
 
 ## Team
 
@@ -234,6 +247,32 @@ A key created without a `scopes` field gets `email:send`, `email:read`, `domain:
 | GET | `/v1/me` | This key's scopes, plan, rate limit and safety checks. Needs no scope: call it first instead of finding scopes through 403s. |
 | GET | `/v1/usage` | Usage against the plan limits, in Resend's shape: emails in the last 24 hours and this month, contacts, segments, domains. |
 | GET | `/v1/analytics` | Sending and engagement metrics. |
+
+## Billing
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/v1/billing` | The plan, its state in Stripe (interval, status, renewal or end date, a scheduled downgrade, a failed payment), usage this month against the plan's limits, and the next plan up. `billing:read`. |
+| GET | `/v1/billing/invoices` | Invoices, newest first. `limit` 1 to 100; page with `after` or `before` set to an invoice id. `billing:read`. |
+| POST | `/v1/billing/checkout` | A link for a person to start or change a plan: `{"plan": "starter" \| "growth" \| "scale", "interval": "monthly" \| "yearly"}`. Nothing is charged and no plan changes until they confirm. `billing:manage`. |
+| POST | `/v1/billing/portal` | A Stripe billing portal link for cards, invoices, billing details and cancelling; `{"flow": "cancel"}` opens the cancel page. `billing:manage`. |
+
+Only keys created by the team owner can call these. A team with more than one owner gets a 409 with code `multiple_owners`.
+
+## Account activation and the CLI
+
+A new account is pending until it is activated; until then every other endpoint answers 403. These need no scope, work with the key a CLI signup returns, and are not for connected apps.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/v1/account/activation` | Whether the account is pending or active, and the plan once active. |
+| POST | `/v1/account/activation/invite` | Activate on the free plan with `{"code": "..."}`. 10 tries a minute. |
+| POST | `/v1/account/activation/free-trial` | Ask for the free plan with a `use_case`. A person reviews it and the account is emailed. |
+| POST | `/v1/account/activation/checkout` | A Stripe Checkout link for `plan` and `interval`; poll `GET /v1/account/activation` until it is active. 10 links an hour. |
+| POST | `/v1/cli/device`, `/v1/cli/token` | The device login behind `smtpfast login` (RFC 8628): show `user_code` and `verification_uri`, then poll the token endpoint with `device_code`. A team owner or admin approves it and the key comes back once. No API key needed. |
+| POST | `/v1/cli/signup`, `/v1/cli/signup/verify` | The signup behind `smtpfast signup`: an 8-digit code is emailed, and verifying it creates a pending account and returns its first key, once. No API key needed. |
+
+Prefer running the `smtpfast` CLI over calling the `/v1/cli/*` endpoints directly.
 
 ## Errors
 
