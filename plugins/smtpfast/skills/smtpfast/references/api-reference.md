@@ -73,10 +73,13 @@ Resend-compatible Inboxes API. All paths are under `/v1/inboxes/{inbox_id}`.
 | GET/POST | `.../labels`, GET/PATCH/DELETE `.../labels/{label_id}` | Manage labels. |
 | GET/POST | `.../drafts`, GET/PATCH/DELETE `.../drafts/{draft_id}` | Drafts for a person to review. |
 | POST | `.../drafts/{draft_id}/send` | Send a draft. Pass the reviewed `revision`; a changed draft answers `409`. |
+| GET | `.../drafts/{draft_id}/attachments/{attachment_id}` | One file of a draft with a download link that works for 15 minutes, so the person approving the draft can open it. 410 once the draft is sent. |
 
 Reading, labelling, assigning, notes and drafts need `inbound:read`; deleting needs `inbound:delete`; replying, forwarding and sending drafts also need `email:send`.
 
 **Assignment.** `PATCH .../threads/{thread_id}` with `{"assignee_email": "ann@example.com"}` assigns the thread to a member of the team, and `null` unassigns it. An address outside the team is a 422 and nothing in the PATCH applies. Threads and list items return `assignee_email`, and a change sends `inbox.thread.assigned` or `inbox.thread.unassigned`.
+
+**Attachments.** Reply and forward take `attachments` in the `POST /v1/emails` shape: up to 10 files, base64, 10 MB each and 25 MB in total. On a draft, `attachments` replaces all of its files (`null` or `[]` removes them; no `path` or `content_id`), and `{"id": "..."}` keeps a stored file without uploading it again.
 
 **Notes** are never emailed, never part of a reply, forward or draft, and no webhook carries them.
 
